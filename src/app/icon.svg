@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120">
+  <path d="M8 6 H92 V60 C92 89 72 105 50 115 C28 105 8 89 8 60 Z" fill="#1E3A2F" stroke="#C9B488" stroke-width="3"/>
+  <path d="M16 14 H84 V60 C84 84 66 98 50 106 C34 98 16 84 16 60 Z" fill="none" stroke="#C9B488" stroke-width="1.5"/>
+  <text x="51" y="80" text-anchor="middle" fill="#EDE4D1" font-size="66" font-style="italic" font-family="'EB Garamond', Garamond, Georgia, serif">P</text>
+</svg>

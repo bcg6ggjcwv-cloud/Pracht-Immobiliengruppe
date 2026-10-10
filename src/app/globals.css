@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/*
+ * Zentrale Design-Variablen der Pracht Immobiliengruppe.
+ * Farben hier ändern – alle Seiten übernehmen sie automatisch.
+ * In Tailwind nutzbar als z. B. bg-gruen, text-sand, border-linie, font-serif.
+ */
+@theme {
+  --color-gruen: #1e3a2f; /* Hauptfarbe */
+  --color-beige: #ede4d1; /* Grund */
+  --color-sand: #c9b488; /* Akzent */
+  --color-creme: #f4eee2; /* Flächen */
+
+  --color-text: var(--color-gruen);
+  --color-text-leise: #4b5d54;
+  --color-linie: #c9b488;
+  --color-fehler: #8a2b1f;
+
+  --font-serif: var(--font-caslon), "Libre Caslon Text", Georgia, serif;
+  --font-sans: var(--font-jost), "Jost", system-ui, sans-serif;
+  --font-garamond: var(--font-eb-garamond), "EB Garamond", Georgia, serif;
+
+  --tracking-marke: 0.26em;
+  --tracking-weit: 0.32em;
+}
+
+html {
+  background: var(--color-beige);
+}
+
+body {
+  background: var(--color-beige);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  hyphens: auto;
+  overflow-wrap: break-word;
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Sichtbarer Tastatur-Fokus (Barrierefreiheit) */
+:focus-visible {
+  outline: 2px solid var(--color-gruen);
+  outline-offset: 3px;
+}
