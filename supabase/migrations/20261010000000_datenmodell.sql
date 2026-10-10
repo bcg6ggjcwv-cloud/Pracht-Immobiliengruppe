@@ -210,6 +210,18 @@ create table public.audit_log (
 );
 create index on public.audit_log (zeitpunkt desc);
 
+-- Freigaben für Mitarbeiter: ohne Eintrag sieht ein Mitarbeiter nichts.
+-- weg_id leer = Freigabe für alle WEGs (auch neu angelegte).
+create table public.mitarbeiter_zugriff (
+  id           uuid primary key default gen_random_uuid(),
+  person_id    uuid not null references public.person on delete cascade,
+  weg_id       uuid references public.weg on delete cascade,
+  erteilt_am   timestamptz not null default now(),
+  erteilt_von  uuid references public.person on delete set null
+);
+create unique index mitarbeiter_zugriff_eindeutig
+  on public.mitarbeiter_zugriff (person_id, coalesce(weg_id, '00000000-0000-0000-0000-000000000000'));
+
 -- ---------------------------------------------------------------------
 -- 3. Hilfsfunktionen für die Zugriffsregeln
 --    "security definer" = laufen mit Rechten des Erstellers, damit sie
@@ -222,7 +234,13 @@ language sql stable security definer set search_path = '' as $$
   select id from public.person where user_id = auth.uid()
 $$;
 
-create function public.ist_verwaltung() returns boolean
+create function public.ist_verwalter() returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.person where user_id = auth.uid() and rolle = 'verwalter')
+$$;
+
+-- Verwalter oder Mitarbeiter (unabhängig von Freigaben)
+create function public.ist_personal() returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (
     select 1 from public.person
@@ -230,9 +248,51 @@ language sql stable security definer set search_path = '' as $$
   )
 $$;
 
-create function public.ist_verwalter() returns boolean
+-- Mitarbeiter mit Freigabe für alle WEGs
+create function public.hat_freigabe_alle() returns boolean
 language sql stable security definer set search_path = '' as $$
-  select exists (select 1 from public.person where user_id = auth.uid() and rolle = 'verwalter')
+  select exists (
+    select 1 from public.mitarbeiter_zugriff z
+    join public.person p on p.id = z.person_id
+    where p.user_id = auth.uid() and p.rolle = 'mitarbeiter' and z.weg_id is null
+  )
+$$;
+
+-- Mitarbeiter mit irgendeiner Freigabe
+create function public.hat_freigabe() returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.mitarbeiter_zugriff z
+    join public.person p on p.id = z.person_id
+    where p.user_id = auth.uid() and p.rolle = 'mitarbeiter'
+  )
+$$;
+
+-- Darf diese WEG verwalten: Verwalter immer, Mitarbeiter nur mit Freigabe
+create function public.darf_weg_verwalten(p_weg uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select public.ist_verwalter() or exists (
+    select 1 from public.mitarbeiter_zugriff z
+    join public.person p on p.id = z.person_id
+    where p.user_id = auth.uid() and p.rolle = 'mitarbeiter'
+      and (z.weg_id is null or z.weg_id = p_weg)
+  )
+$$;
+
+-- Darf die Stammdaten dieses Eigentümers pflegen: Person gehört (auch früher)
+-- zu einer freigegebenen WEG oder ist noch keiner WEG zugeordnet (gerade angelegt)
+create function public.darf_person_verwalten(p_person uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select public.ist_verwalter() or public.hat_freigabe_alle() or (
+    public.hat_freigabe() and (
+      exists (select 1 from public.eigentum e join public.einheit ei on ei.id = e.einheit_id
+              where e.person_id = p_person and public.darf_weg_verwalten(ei.weg_id))
+      or exists (select 1 from public.beiratsmitglied b
+                 where b.person_id = p_person and public.darf_weg_verwalten(b.weg_id))
+      or (not exists (select 1 from public.eigentum where person_id = p_person)
+          and not exists (select 1 from public.beiratsmitglied where person_id = p_person))
+    )
+  )
 $$;
 
 -- aktuelles Eigentum an einer bestimmten Einheit
@@ -269,53 +329,88 @@ language sql stable security definer set search_path = '' as $$
   )
 $$;
 
-create function public.darf_weg_sehen(p_weg uuid) returns boolean
-language sql stable security definer set search_path = '' as $$
-  select public.ist_verwaltung() or public.ist_mitglied_der_weg(p_weg)
-$$;
-
 -- ---------------------------------------------------------------------
 -- 4. Row Level Security
 -- ---------------------------------------------------------------------
 
-alter table public.weg               enable row level security;
-alter table public.notfallkontakt    enable row level security;
-alter table public.einheit           enable row level security;
-alter table public.person            enable row level security;
-alter table public.eigentum          enable row level security;
-alter table public.beiratsmitglied   enable row level security;
-alter table public.dokument          enable row level security;
-alter table public.lesebestaetigung  enable row level security;
-alter table public.beschluss         enable row level security;
-alter table public.anliegen          enable row level security;
-alter table public.anliegen_foto     enable row level security;
-alter table public.mitteilung        enable row level security;
-alter table public.audit_log         enable row level security;
+alter table public.weg                 enable row level security;
+alter table public.notfallkontakt      enable row level security;
+alter table public.einheit             enable row level security;
+alter table public.person              enable row level security;
+alter table public.eigentum            enable row level security;
+alter table public.beiratsmitglied     enable row level security;
+alter table public.dokument            enable row level security;
+alter table public.lesebestaetigung    enable row level security;
+alter table public.beschluss           enable row level security;
+alter table public.anliegen            enable row level security;
+alter table public.anliegen_foto       enable row level security;
+alter table public.mitteilung          enable row level security;
+alter table public.audit_log           enable row level security;
+alter table public.mitarbeiter_zugriff enable row level security;
 
--- Verwaltung (Verwalter + Mitarbeiter) darf in den Stammdaten alles
-create policy verwaltung_alles on public.weg              for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.notfallkontakt   for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.einheit          for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.person           for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.eigentum         for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.beiratsmitglied  for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.dokument         for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.beschluss        for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.anliegen         for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.anliegen_foto    for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_alles on public.mitteilung       for all using (public.ist_verwaltung()) with check (public.ist_verwaltung());
-create policy verwaltung_lesen on public.lesebestaetigung for select using (public.ist_verwaltung());
+-- 4a. Verwaltung: Verwalter immer, Mitarbeiter nur in freigegebenen WEGs
 
--- Eigentümer/Beirat: nur lesen, nur eigene WEGs
+-- WEG anlegen: Verwalter oder Mitarbeiter mit Freigabe für alle WEGs; löschen nur der Verwalter
+create policy verwaltung_lesen   on public.weg for select using (public.darf_weg_verwalten(id));
+create policy verwaltung_anlegen on public.weg for insert with check (public.ist_verwalter() or public.hat_freigabe_alle());
+create policy verwaltung_aendern on public.weg for update using (public.darf_weg_verwalten(id)) with check (public.darf_weg_verwalten(id));
+create policy verwalter_loeschen on public.weg for delete using (public.ist_verwalter());
+
+create policy verwaltung_alles on public.notfallkontakt  for all using (public.darf_weg_verwalten(weg_id)) with check (public.darf_weg_verwalten(weg_id));
+create policy verwaltung_alles on public.einheit         for all using (public.darf_weg_verwalten(weg_id)) with check (public.darf_weg_verwalten(weg_id));
+create policy verwaltung_alles on public.beiratsmitglied for all using (public.darf_weg_verwalten(weg_id)) with check (public.darf_weg_verwalten(weg_id));
+create policy verwaltung_alles on public.dokument        for all using (public.darf_weg_verwalten(weg_id)) with check (public.darf_weg_verwalten(weg_id));
+create policy verwaltung_alles on public.beschluss       for all using (public.darf_weg_verwalten(weg_id)) with check (public.darf_weg_verwalten(weg_id));
+create policy verwaltung_alles on public.anliegen        for all using (public.darf_weg_verwalten(weg_id)) with check (public.darf_weg_verwalten(weg_id));
+create policy verwaltung_alles on public.mitteilung      for all using (public.darf_weg_verwalten(weg_id)) with check (public.darf_weg_verwalten(weg_id));
+
+create policy verwaltung_alles on public.eigentum for all
+  using (exists (select 1 from public.einheit e where e.id = einheit_id and public.darf_weg_verwalten(e.weg_id)))
+  with check (exists (select 1 from public.einheit e where e.id = einheit_id and public.darf_weg_verwalten(e.weg_id)));
+
+create policy verwaltung_alles on public.anliegen_foto for all
+  using (exists (select 1 from public.anliegen a where a.id = anliegen_id and public.darf_weg_verwalten(a.weg_id)))
+  with check (exists (select 1 from public.anliegen a where a.id = anliegen_id and public.darf_weg_verwalten(a.weg_id)));
+
+create policy verwaltung_lesen on public.lesebestaetigung for select
+  using (exists (select 1 from public.dokument d where d.id = dokument_id and public.darf_weg_verwalten(d.weg_id)));
+
+-- Personen: Mitarbeiter pflegen nur Eigentümer ihrer WEGs und legen nur Eigentümer ohne Login an.
+-- Rolle und Login ändert nur der Verwalter (siehe Trigger person_schutz).
+create policy verwaltung_lesen on public.person for select
+  using (public.ist_verwalter() or (rolle = 'eigentuemer' and public.darf_person_verwalten(id)));
+create policy verwaltung_anlegen on public.person for insert
+  with check (public.ist_verwalter() or (public.hat_freigabe() and rolle = 'eigentuemer' and user_id is null));
+create policy verwaltung_aendern on public.person for update
+  using (public.ist_verwalter() or (rolle = 'eigentuemer' and public.darf_person_verwalten(id)))
+  with check (public.ist_verwalter() or (rolle = 'eigentuemer' and public.darf_person_verwalten(id)));
+create policy verwalter_loeschen on public.person for delete using (public.ist_verwalter());
+
+-- Freigaben vergibt nur der Verwalter; Mitarbeiter sehen ihre eigenen
+create policy verwalter_alles on public.mitarbeiter_zugriff for all
+  using (public.ist_verwalter()) with check (public.ist_verwalter());
+create policy selbst_lesen on public.mitarbeiter_zugriff for select
+  using (person_id = public.meine_person_id());
+
+-- Audit-Log: nur der Verwalter liest; geschrieben wird ausschließlich über
+-- die Funktionen unten. Niemand darf ändern oder löschen.
+create policy verwalter_lesen on public.audit_log for select using (public.ist_verwalter());
+
+-- 4b. Eigentümer und Beirat: nur eigene WEGs, keine Daten anderer Personen
+
 create policy mitglied_lesen on public.weg            for select using (public.ist_mitglied_der_weg(id));
 create policy mitglied_lesen on public.notfallkontakt for select using (public.ist_mitglied_der_weg(weg_id));
 create policy mitglied_lesen on public.einheit        for select using (public.ist_mitglied_der_weg(weg_id));
 create policy mitglied_lesen on public.beschluss      for select using (public.ist_mitglied_der_weg(weg_id));
 create policy mitglied_lesen on public.mitteilung     for select using (public.ist_mitglied_der_weg(weg_id));
-create policy mitglied_lesen on public.beiratsmitglied for select using (public.ist_mitglied_der_weg(weg_id));
 
--- Person: jeder sieht nur sich selbst (keine fremden Adressen/Telefonnummern)
-create policy selbst_lesen on public.person for select using (user_id = auth.uid());
+-- Beirat: jeder sieht nur seinen eigenen Eintrag (keine Namen anderer, Datenschutz)
+create policy selbst_lesen on public.beiratsmitglied for select using (person_id = public.meine_person_id());
+
+-- Person: eigener Datensatz lesen und Kontaktdaten selbst ändern
+-- (welche Felder, regelt der Trigger person_schutz)
+create policy selbst_lesen   on public.person for select using (user_id = auth.uid());
+create policy selbst_aendern on public.person for update using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- Eigentum: nur eigene Einträge
 create policy selbst_lesen on public.eigentum for select using (person_id = public.meine_person_id());
@@ -351,13 +446,40 @@ create policy selbst_anlegen on public.anliegen_foto for insert with check (
   exists (select 1 from public.anliegen a where a.id = anliegen_id and a.person_id = public.meine_person_id())
 );
 
--- Audit-Log: nur der Verwalter liest; geschrieben wird ausschließlich über
--- die Funktionen unten. Niemand darf ändern oder löschen.
-create policy verwalter_lesen on public.audit_log for select using (public.ist_verwalter());
+-- 4c. Schutz einzelner Felder der Person
+--   Verwalter: alles. Mitarbeiter: alles außer Rolle und Login.
+--   Eigentümer selbst: nur Telefon, Anschrift und "Post statt Portal".
+--   Name und E-Mail ändert die Verwaltung (E-Mail = Login, läuft über Bestätigungs-Mail).
+create function public.person_schutz() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null or public.ist_verwalter() then
+    return new;  -- Server-Prozesse (Einladung) und Verwalter
+  end if;
+  if new.rolle is distinct from old.rolle or new.user_id is distinct from old.user_id then
+    raise exception 'Rolle und Login darf nur der Verwalter ändern';
+  end if;
+  if old.user_id = auth.uid() and not public.darf_person_verwalten(old.id) then
+    if new.vorname is distinct from old.vorname or new.nachname is distinct from old.nachname
+       or new.email is distinct from old.email then
+      raise exception 'Name und E-Mail ändert die Verwaltung – bitte eine Nachricht senden';
+    end if;
+  end if;
+  return new;
+end $$;
+
+create trigger person_schutz before update on public.person
+  for each row execute function public.person_schutz();
 
 -- ---------------------------------------------------------------------
 -- 5. Audit-Log befüllen
 -- ---------------------------------------------------------------------
+
+create function public.protokolliere(p_aktion text, p_tabelle text, p_id uuid) returns void
+language sql security definer set search_path = '' as $$
+  insert into public.audit_log (user_id, aktion, tabelle, datensatz_id)
+  values (auth.uid(), p_aktion, p_tabelle, p_id)
+$$;
 
 -- Änderungen werden automatisch per Trigger protokolliert
 create function public.audit_aenderung() returns trigger
@@ -380,7 +502,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['weg','notfallkontakt','einheit','person','eigentum','beiratsmitglied',
-                           'dokument','beschluss','anliegen','mitteilung']
+                           'dokument','beschluss','anliegen','mitteilung','mitarbeiter_zugriff']
   loop
     execute format('create trigger audit after insert or update or delete on public.%I
                     for each row execute function public.audit_aenderung()', t);
@@ -398,17 +520,31 @@ begin
     raise exception 'Kein Zugriff auf dieses Dokument';
   end if;
   perform public.protokolliere('angesehen', 'dokument', p_dokument);
-  if v_person is not null and not public.ist_verwaltung() then
+  if v_person is not null and not public.ist_personal() then
     insert into public.lesebestaetigung (dokument_id, person_id)
     values (p_dokument, v_person) on conflict do nothing;
   end if;
 end $$;
 
-create function public.protokolliere(p_aktion text, p_tabelle text, p_id uuid) returns void
-language sql security definer set search_path = '' as $$
-  insert into public.audit_log (user_id, aktion, tabelle, datensatz_id)
-  values (auth.uid(), p_aktion, p_tabelle, p_id)
-$$;
+-- Datenauskunft nach Art. 15 DSGVO: alle Daten, die zur eigenen Person gespeichert sind.
+-- Läuft mit den Rechten des Nutzers, liefert also nie fremde Daten.
+create function public.meine_daten() returns jsonb
+language plpgsql security invoker set search_path = '' as $$
+declare v_person uuid := public.meine_person_id();
+begin
+  perform public.protokolliere('angesehen', 'person', v_person);
+  return jsonb_build_object(
+    'erstellt_am',       now(),
+    'person',            (select to_jsonb(p) from public.person p where p.id = v_person),
+    'eigentum',          (select coalesce(jsonb_agg(to_jsonb(e)), '[]') from public.eigentum e where e.person_id = v_person),
+    'beirat',            (select coalesce(jsonb_agg(to_jsonb(b)), '[]') from public.beiratsmitglied b where b.person_id = v_person),
+    'anliegen',          (select coalesce(jsonb_agg(to_jsonb(a)), '[]') from public.anliegen a where a.person_id = v_person),
+    'lesebestaetigungen',(select coalesce(jsonb_agg(to_jsonb(l)), '[]') from public.lesebestaetigung l where l.person_id = v_person),
+    'persoenliche_dokumente',
+                         (select coalesce(jsonb_agg(jsonb_build_object('titel', d.titel, 'jahr', d.jahr, 'kategorie', d.kategorie)), '[]')
+                          from public.dokument d where d.person_id = v_person)
+  );
+end $$;
 
 -- Anliegen: Änderungszeitpunkt automatisch pflegen
 create function public.setze_aktualisiert_am() returns trigger
@@ -432,11 +568,14 @@ create policy dokumente_lesen on storage.objects for select using (
   bucket_id = 'dokumente'
   and exists (select 1 from public.dokument d where d.datei_pfad = storage.objects.name)
 );
+-- Pfad-Schema für Dokumente: <weg_id>/<datei>
 create policy dokumente_hochladen on storage.objects for insert with check (
-  bucket_id = 'dokumente' and public.ist_verwaltung()
+  bucket_id = 'dokumente'
+  and public.darf_weg_verwalten(((storage.foldername(name))[1])::uuid)
 );
-create policy dokumente_verwalten on storage.objects for delete using (
-  bucket_id = 'dokumente' and public.ist_verwaltung()
+create policy dokumente_loeschen on storage.objects for delete using (
+  bucket_id = 'dokumente'
+  and public.darf_weg_verwalten(((storage.foldername(name))[1])::uuid)
 );
 
 create policy fotos_lesen on storage.objects for select using (
