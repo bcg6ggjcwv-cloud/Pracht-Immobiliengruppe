@@ -1,0 +1,894 @@
+<title>Pracht Eigentümerportal Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital@1&family=Jost:wght@400;500&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: ruhige Einspalten-App (max. 960px), Kopfzeile mit Wortmarke, Reiterleiste, feine Linien statt Schatten.
+   Bewusst nur ein (helles) Erscheinungsbild – entspricht dem Markenauftritt der Pracht Immobiliengruppe. */
+:root {
+  --gruen: #1E3A2F;
+  --beige: #EDE4D1;
+  --sand: #C9B488;
+  --creme: #F4EEE2;
+  --leise: #4B5D54;
+  --linie: #C9B488;
+  --fehler: #8A2B1F;
+  --ok: #2F5D3A;
+  --warn: #8A5A12;
+  --weiss: #FBF8F1;
+  --serif: "Libre Caslon Text", Georgia, "Times New Roman", serif;
+  --sans: "Jost", "Helvetica Neue", Arial, sans-serif;
+  --garamond: "EB Garamond", Garamond, Georgia, serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { background: var(--beige); color: var(--gruen); }
+body { font-family: var(--sans); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 400; margin: 0; text-wrap: balance; hyphens: auto; }
+h1 { font-size: clamp(1.7rem, 4.5vw, 2.3rem); line-height: 1.2; }
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.1rem; }
+p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--gruen); outline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) { .einblenden { animation: ein .25s ease-out; } }
+@keyframes ein { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.rahmen { max-width: 960px; margin: 0 auto; padding-inline: 20px; }
+.demoband { background: var(--gruen); color: var(--beige); font-size: 13px; }
+.demoband .rahmen { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding-block: 8px; }
+.demoband button { background: none; border: 1px solid var(--sand); color: var(--beige); padding: 3px 10px; font-size: 12px; letter-spacing: .08em; cursor: pointer; }
+.demoband button:hover { background: var(--sand); color: var(--gruen); }
+.demoband .gruppe { display: flex; gap: 8px; flex-wrap: wrap; }
+
+header.kopf { border-bottom: 1px solid var(--linie); }
+header.kopf .rahmen { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px; }
+.logo { height: 54px; width: auto; display: block; }
+.wer { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.wer .name { color: var(--leise); text-align: right; line-height: 1.3; }
+.knopf { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--gruen); background: none; padding: 10px 18px; font-size: 12.5px; letter-spacing: .18em; text-transform: uppercase; cursor: pointer; text-decoration: none; }
+.knopf:hover { background: var(--gruen); color: var(--beige); }
+.knopf.voll { background: var(--gruen); color: var(--beige); }
+.knopf.voll:hover { background: #2a4d3f; }
+.knopf.klein { padding: 6px 12px; font-size: 11.5px; }
+.knopf[disabled] { opacity: .45; cursor: not-allowed; }
+
+nav.reiter { border-bottom: 1px solid var(--linie); overflow-x: auto; }
+nav.reiter .rahmen { display: flex; gap: 4px; }
+nav.reiter button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 12px 12px 10px; font-size: 14px; letter-spacing: .04em; white-space: nowrap; cursor: pointer; color: var(--leise); }
+nav.reiter button[aria-current="page"] { color: var(--gruen); border-bottom-color: var(--gruen); }
+nav.reiter button:hover { color: var(--gruen); }
+.zahl { display: inline-block; min-width: 1.4em; padding: 0 .35em; margin-left: 4px; font-size: 11.5px; line-height: 1.5; background: var(--sand); color: var(--gruen); text-align: center; }
+
+main { padding-block: 32px 64px; }
+.stapel { display: flex; flex-direction: column; gap: 28px; }
+.stapel.eng { gap: 14px; }
+.eyebrow { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--leise); }
+.leise { color: var(--leise); }
+.klein { font-size: 13.5px; }
+.linie { height: 1px; background: var(--linie); border: 0; margin: 0; }
+.flaeche { background: var(--creme); border: 1px solid var(--linie); padding: 22px; }
+.raster { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.raster > * { min-width: 0; }
+.kpi { border: 1px solid var(--linie); background: var(--creme); padding: 18px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; text-align: left; }
+.kpi:hover { border-color: var(--gruen); }
+.kpi .wert { font-family: var(--serif); font-size: 2rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.kpi.achtung { border-left: 3px solid var(--warn); }
+
+.liste { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linie); }
+.liste > li { border-bottom: 1px solid var(--linie); padding: 14px 0; display: flex; gap: 12px 16px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.liste > li > .haupt { min-width: 0; flex: 1 1 260px; }
+.liste .titel { font-family: var(--serif); font-size: 1.05rem; }
+button.zeile { all: unset; cursor: pointer; display: block; width: 100%; }
+button.zeile:hover .titel { text-decoration: underline; text-decoration-color: var(--sand); text-underline-offset: 4px; }
+button.zeile:focus-visible { outline: 2px solid var(--gruen); outline-offset: 3px; }
+
+.pille { display: inline-block; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border: 1px solid currentColor; white-space: nowrap; }
+.pille.neu { color: var(--warn); }
+.pille.bearbeitung { color: var(--gruen); }
+.pille.erledigt { color: var(--ok); background: #e3e7d9; border-color: #e3e7d9; }
+.pille.angefochten { color: var(--fehler); }
+.pille.frist { color: var(--warn); }
+.pille.bestand { color: var(--leise); }
+.pille.ungelesen { color: var(--gruen); background: var(--sand); border-color: var(--sand); }
+.pille.persoenlich { color: var(--leise); }
+
+.filter { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.filter > * { flex: 1 1 160px; min-width: 0; }
+label.feld { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.feld input, .feld select, .feld textarea { width: 100%; border: 1px solid var(--linie); background: var(--weiss); padding: 10px 12px; font-size: 16px; border-radius: 0; }
+.feld input:focus, .feld select:focus, .feld textarea:focus { outline: none; border-color: var(--gruen); }
+.feld input[readonly] { background: transparent; color: var(--leise); }
+.feld .hinweis { font-size: 12.5px; color: var(--leise); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { border: 1px solid var(--linie); background: none; padding: 5px 12px; font-size: 13px; cursor: pointer; }
+.chips button[aria-pressed="true"] { background: var(--gruen); color: var(--beige); border-color: var(--gruen); }
+
+.notfall { border: 1px solid var(--gruen); padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.notfall .reihe { display: flex; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; border-top: 1px solid var(--linie); padding-top: 10px; }
+.tel { font-variant-numeric: tabular-nums; font-weight: 500; user-select: all; }
+
+.makler { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.makler button { border: 1px solid var(--linie); background: var(--creme); padding: 18px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.makler button:hover { border-color: var(--gruen); }
+.makler .titel { font-family: var(--serif); font-size: 1.1rem; }
+
+.meldung { border-left: 2px solid var(--gruen); background: var(--creme); padding: 12px 16px; font-size: 14.5px; }
+.meldung.warn { border-left-color: var(--warn); }
+
+/* Dialog */
+.schleier { position: fixed; inset: 0; background: rgba(30, 58, 47, .35); display: flex; align-items: flex-start; justify-content: center; padding: max(24px, env(safe-area-inset-top, 0px)) 16px 24px; overflow-y: auto; z-index: 10; }
+.dialog { background: var(--beige); border: 1px solid var(--gruen); width: 100%; max-width: 680px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+.dialog .kopfzeile { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.schliessen { background: none; border: 0; font-size: 26px; line-height: 1; cursor: pointer; padding: 0 4px; }
+
+/* Dokumentansicht im PDF-Stil */
+.blatt { background: var(--weiss); border: 1px solid var(--linie); padding: clamp(18px, 4vw, 36px); display: flex; flex-direction: column; gap: 14px; font-size: 14px; }
+.blatt .briefkopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; border-bottom: 1px solid var(--gruen); padding-bottom: 10px; }
+.tabelle { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--linie); vertical-align: top; }
+th { font-weight: 500; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--leise); }
+td.r, th.r { text-align: right; }
+tr.summe td { border-top: 1px solid var(--gruen); font-weight: 500; }
+
+/* Anmeldung */
+.anmeldung { max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+.anmeldung .mitte { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.konten { display: flex; flex-direction: column; gap: 10px; }
+.konto { border: 1px solid var(--linie); background: var(--creme); padding: 14px 16px; text-align: left; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.konto:hover { border-color: var(--gruen); }
+.qr { width: 150px; height: 150px; background: var(--weiss); border: 1px solid var(--linie); }
+
+.fotos { display: flex; gap: 8px; flex-wrap: wrap; }
+.fotos img { width: 84px; height: 84px; object-fit: cover; border: 1px solid var(--linie); }
+.verlauf { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.verlauf li { border-left: 1px solid var(--sand); padding-left: 12px; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--gruen); color: var(--beige); padding: 12px 18px; font-size: 14px; z-index: 20; max-width: calc(100% - 32px); }
+
+footer.fuss { border-top: 1px solid var(--linie); font-size: 13px; color: var(--leise); }
+footer.fuss .rahmen { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; padding-block: 18px; }
+@media (max-width: 560px) {
+  .logo { height: 44px; }
+  .wer .name { display: none; }
+  .dialog { padding: 18px; }
+}
+</style>
+
+<div class="demoband">
+  <div class="rahmen">
+    <span>Demo mit erfundenen Daten. Nichts wird gespeichert oder versendet, außer in diesem Browser.</span>
+    <span class="gruppe" id="demo-knoepfe"></span>
+  </div>
+</div>
+<header class="kopf"><div class="rahmen" id="kopf"></div></header>
+<nav class="reiter" id="reiter" aria-label="Bereiche" hidden><div class="rahmen" id="reiter-innen"></div></nav>
+<main><div class="rahmen" id="inhalt"></div></main>
+<footer class="fuss"><div class="rahmen"><span>© 2026 Pracht Immobiliengruppe, Stuttgart</span><span>Impressum · Datenschutz</span></div></footer>
+<div id="dialog-ort"></div>
+<div id="toast-ort" aria-live="polite"></div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------------------
+// Erfundene Demodaten – WEG in Stuttgart, 8 Einheiten, 10 Eigentümer
+// ---------------------------------------------------------------------------
+const HEUTE = new Date("2026-10-10T10:00:00");
+const SPEICHER = "pracht-demo-v1";
+
+function startdaten() {
+  return {
+    wegs: [
+      { id: "w1", name: "WEG Musterstraße 12", strasse: "Musterstraße 12", plz: "70176", ort: "Stuttgart-West", baujahr: 1972,
+        prinzip: "MEA", bestelltVon: "2022-01-01", bestelltBis: "2026-12-31",
+        notfall: [
+          { was: "Heizung & Sanitär – Notdienst", tel: "0711 000 00 11", hinweis: "rund um die Uhr" },
+          { was: "Aufzug – Notruf", tel: "0711 000 00 22", hinweis: "Aufzugsfirma, auch am Wochenende" },
+          { was: "Schlüsseldienst", tel: "0711 000 00 33", hinweis: "Vertragspartner der WEG" },
+          { was: "Pracht Verwaltung – Notfallnummer", tel: "0711 000 00 44", hinweis: "außerhalb der Bürozeiten" },
+        ] },
+      { id: "w2", name: "WEG Beispielweg 3", strasse: "Beispielweg 3", plz: "70180", ort: "Stuttgart-Süd", baujahr: 1995,
+        prinzip: "Kopf", bestelltVon: "2024-01-01", bestelltBis: "2028-12-31",
+        notfall: [{ was: "Heizung & Sanitär – Notdienst", tel: "0711 000 00 55", hinweis: "rund um die Uhr" }] },
+    ],
+    einheiten: [
+      { id: "e1", weg: "w1", nr: "WE 1", lage: "EG links", mea: 112.0 },
+      { id: "e2", weg: "w1", nr: "WE 2", lage: "EG rechts", mea: 125.5 },
+      { id: "e3", weg: "w1", nr: "WE 3", lage: "1. OG rechts", mea: 118.5 },
+      { id: "e4", weg: "w1", nr: "WE 4", lage: "1. OG links", mea: 131.0 },
+      { id: "e5", weg: "w1", nr: "WE 5", lage: "2. OG links", mea: 112.0 },
+      { id: "e6", weg: "w1", nr: "WE 6", lage: "2. OG rechts", mea: 125.5 },
+      { id: "e7", weg: "w1", nr: "WE 7", lage: "3. OG rechts", mea: 118.5 },
+      { id: "e8", weg: "w1", nr: "WE 8", lage: "DG", mea: 157.0 },
+      { id: "e9", weg: "w2", nr: "WE 1", lage: "EG", mea: 250 },
+    ],
+    personen: [
+      { id: "p1", vorname: "Henrike", nachname: "Albrecht", einheit: "e1", email: "h.albrecht@beispiel.example", zugang: "aktiv" },
+      { id: "p2", vorname: "Paul", nachname: "Sommer", einheit: "e2", email: "paul.sommer@beispiel.example", zugang: "aktiv" },
+      { id: "p3", vorname: "Erika", nachname: "Muster", einheit: "e3", email: "erika.muster@beispiel.example", zugang: "aktiv",
+        telefon: "0711 000 12 34", strasse: "Musterstraße 12", plz: "70176", ort: "Stuttgart", post: false },
+      { id: "p4", vorname: "Martin", nachname: "Kessler", titel: "Dr.", einheit: "e4", email: "m.kessler@beispiel.example", zugang: "eingeladen" },
+      { id: "p5", vorname: "Lena", nachname: "Hartmann", einheit: "e5", email: "lena.hartmann@beispiel.example", zugang: "aktiv" },
+      { id: "p6", vorname: "Tobias", nachname: "Hartmann", einheit: "e5", email: "tobias.hartmann@beispiel.example", zugang: "offen" },
+      { id: "p7", vorname: "Ingrid", nachname: "Vogt", einheit: "e6", email: null, zugang: "post" },
+      { id: "p8", vorname: "Yusuf", nachname: "Demir", einheit: "e7", email: "y.demir@beispiel.example", zugang: "aktiv" },
+      { id: "p9", vorname: "Clara", nachname: "Brandt", einheit: "e8", email: "clara.brandt@beispiel.example", zugang: "aktiv", hinweis: "Erbengemeinschaft Brandt" },
+      { id: "p10", vorname: "Felix", nachname: "Brandt", einheit: "e8", email: "felix.brandt@beispiel.example", zugang: "offen", hinweis: "Erbengemeinschaft Brandt" },
+      { id: "p11", vorname: "Johanna", nachname: "Weber", einheit: "e9", email: "j.weber@beispiel.example", zugang: "aktiv" },
+    ],
+    dokumente: [
+      { id: "d1", weg: "w1", kat: "Abrechnung", titel: "Jahresabrechnung 2025", jahr: 2025, person: "p3", pflicht: true, art: "abrechnung" },
+      { id: "d2", weg: "w1", kat: "Wirtschaftsplan", titel: "Wirtschaftsplan 2026", jahr: 2026, pflicht: true, art: "wirtschaftsplan" },
+      { id: "d3", weg: "w1", kat: "Vermögensbericht", titel: "Vermögensbericht zum 31.12.2025", jahr: 2025, pflicht: true, art: "vermoegen" },
+      { id: "d4", weg: "w1", kat: "Protokoll", titel: "Niederschrift Eigentümerversammlung 14.05.2026", jahr: 2026, art: "protokoll" },
+      { id: "d5", weg: "w1", kat: "Protokoll", titel: "Niederschrift Eigentümerversammlung 22.05.2025", jahr: 2025, art: "text" },
+      { id: "d6", weg: "w1", kat: "Teilungserklärung", titel: "Teilungserklärung mit Gemeinschaftsordnung", jahr: 1972, art: "text" },
+      { id: "d7", weg: "w1", kat: "Vertrag", titel: "Wartungsvertrag Aufzug", jahr: 2024, art: "text" },
+      { id: "d8", weg: "w1", kat: "Sonstiges", titel: "Energieausweis (Verbrauchsausweis)", jahr: 2022, art: "text" },
+      { id: "d9", weg: "w1", kat: "Plan", titel: "Grundriss WE 3", jahr: 1972, einheit: "e3", art: "text" },
+      { id: "d10", weg: "w1", kat: "Abrechnung", titel: "Jahresabrechnung 2025", jahr: 2025, person: "p2", pflicht: true, art: "text" },
+      { id: "d11", weg: "w2", kat: "Protokoll", titel: "Niederschrift Eigentümerversammlung 03.06.2026", jahr: 2026, art: "text" },
+    ],
+    gelesen: { "d2": { p1: "2026-09-02", p2: "2026-09-03", p5: "2026-09-01", p8: "2026-09-10", p9: "2026-09-04" }, "d4": { p3: "2026-06-02" }, "d5": { p3: "2025-06-10" } },
+    beschluesse: [
+      { id: "b1", weg: "w1", nr: "2026/01", datum: "2026-05-14", top: "TOP 2", text: "Die Jahresabrechnung 2025 wird in der vorgelegten Fassung vom 12.03.2026 genehmigt; die Abrechnungsspitzen werden zum 01.07.2026 fällig.", ergebnis: "angenommen", ja: 763.5, nein: 0, enth: 112.0 },
+      { id: "b2", weg: "w1", nr: "2026/02", datum: "2026-05-14", top: "TOP 3", text: "Der Wirtschaftsplan 2026 wird beschlossen. Die Zuführung zur Erhaltungsrücklage beträgt 18.000 € jährlich.", ergebnis: "angenommen", ja: 875.5, nein: 0, enth: 0 },
+      { id: "b3", weg: "w1", nr: "2026/03", datum: "2026-05-14", top: "TOP 5", text: "Die Fassade (Straßenseite) wird bis 30.11.2026 gereinigt und imprägniert. Kosten bis 9.800 € brutto aus der Erhaltungsrücklage; Beauftragung des günstigsten von drei Angeboten durch die Verwaltung.", ergebnis: "angenommen", ja: 650.0, nein: 225.5, enth: 0, angefochten: true, vermerk: "Anfechtungsklage AG Stuttgart, eingegangen 10.06.2026 (Az. fiktiv)" },
+      { id: "b4", weg: "w1", nr: "2026/04", datum: "2026-05-14", top: "TOP 6", text: "Der Einbau von Ladestationen für E-Fahrzeuge in der Tiefgarage auf Kosten der Gemeinschaft wird abgelehnt.", ergebnis: "abgelehnt", ja: 243.5, nein: 632.0, enth: 0 },
+      { id: "b5", weg: "w1", nr: "2026/05", datum: "2026-09-29", top: "Umlaufbeschluss", text: "Die Verwaltung wird ermächtigt, den Wartungsvertrag für die Rauchwarnmelder mit Wirkung zum 01.01.2027 neu auszuschreiben.", ergebnis: "angenommen", ja: 1000, nein: 0, enth: 0 },
+      { id: "b6", weg: "w1", nr: "2025/03", datum: "2025-05-22", top: "TOP 4", text: "Die Hausordnung wird um Ruhezeiten an Sonn- und Feiertagen (ganztägig) ergänzt.", ergebnis: "angenommen", ja: 744.5, nein: 131.0, enth: 0 },
+      { id: "b7", weg: "w2", nr: "2026/01", datum: "2026-06-03", top: "TOP 2", text: "Die Jahresabrechnung 2025 wird genehmigt.", ergebnis: "angenommen", ja: 4, nein: 0, enth: 0 },
+    ],
+    anliegen: [
+      { id: "a1", weg: "w1", einheit: "e3", person: "p3", art: "Schaden", betreff: "Feuchter Fleck im Kellerabteil 3", text: "An der Außenwand im Kellerabteil 3 ist seit einigen Tagen ein feuchter Fleck, etwa 40 × 60 cm.", ort: "Keller, Abteil 3", status: "In Bearbeitung", datum: "2026-09-28", fotos: [],
+        verlauf: [["2026-09-28", "Gemeldet"], ["2026-09-29", "Verwaltung: Handwerker für 08.10. beauftragt"], ["2026-10-08", "Verwaltung: Ursache gefunden, Abdichtung folgt KW 43"]] },
+      { id: "a2", weg: "w1", einheit: "e2", person: "p2", art: "Schaden", betreff: "Haustür schließt schwer", text: "Die Haustür fällt nicht mehr von selbst ins Schloss.", ort: "Hauseingang", status: "Neu", datum: "2026-10-09", fotos: [], verlauf: [["2026-10-09", "Gemeldet"]] },
+      { id: "a3", weg: "w1", einheit: "e4", person: "p4", art: "Makleranfrage: Bewertung", betreff: "Wert ermitteln – WE 4", text: "Ich überlege, die Wohnung zu verkaufen, und hätte gern eine Einschätzung.", ort: "", status: "Neu", datum: "2026-10-07", fotos: [], verlauf: [["2026-10-07", "Gemeldet"]] },
+      { id: "a4", weg: "w1", einheit: "e8", person: "p9", art: "Frage", betreff: "Hausgeld nach Erbfall", text: "Auf welches Konto soll die Erbengemeinschaft das Hausgeld künftig zahlen?", ort: "", status: "Erledigt", datum: "2026-08-14", fotos: [], verlauf: [["2026-08-14", "Gemeldet"], ["2026-08-15", "Verwaltung: per Nachricht beantwortet"]] },
+    ],
+    mitteilungen: [
+      { id: "m1", weg: "w1", art: "Aushang", titel: "Fassadenreinigung ab 21.10.2026", text: "Ab Mittwoch, 21.10., wird die Straßenfassade gereinigt. Bitte halten Sie an diesen Tagen die Fenster zur Straße geschlossen und räumen Sie Blumenkästen von den Fensterbänken.", datum: "2026-10-06" },
+      { id: "m2", weg: "w1", art: "Rundschreiben", titel: "Neue Ansprechpartnerin in der Verwaltung", text: "Ab 01.10.2026 betreut Frau Vera Verwalterin Ihre Gemeinschaft. Sie erreichen sie über das Portal unter „Anliegen“ oder zu den Bürozeiten telefonisch.", datum: "2026-09-25" },
+      { id: "m3", weg: "w1", art: "Aushang", titel: "Heizungswartung am 15.10.2026", text: "Die Heizung ist am 15.10. zwischen 8 und 12 Uhr wegen der jährlichen Wartung abgeschaltet.", datum: "2026-09-30" },
+    ],
+    mitarbeiter: [
+      { id: "ma1", name: "Max Mitarbeiter", freigabe: "w1" },
+      { id: "ma2", name: "Mia Mitarbeiterin", freigabe: "" },
+    ],
+  };
+}
+
+let D = laden();
+function laden() {
+  try { const s = localStorage.getItem(SPEICHER); if (s) return JSON.parse(s); } catch (e) {}
+  return startdaten();
+}
+function speichern() { try { localStorage.setItem(SPEICHER, JSON.stringify(D)); } catch (e) {} }
+
+// Sitzung (nicht gespeichert – nach Neuladen wieder Anmeldung)
+const S = { rolle: null, schritt: "konto", reiter: "uebersicht", filter: { kat: "Alle", jahr: "Alle", suche: "" }, bSuche: "" };
+const ERIKA = "p3";
+
+// ---------------------------------------------------------------------------
+// Hilfen
+// ---------------------------------------------------------------------------
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const datum = (iso) => new Date(iso + "T12:00:00").toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+const euro = (n) => n.toLocaleString("de-DE", { style: "currency", currency: "EUR" });
+const mea = (n) => n.toLocaleString("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const heuteIso = () => HEUTE.toISOString().slice(0, 10);
+const tageBis = (iso) => Math.round((new Date(iso + "T12:00:00") - HEUTE) / 864e5);
+const weg = (id) => D.wegs.find((w) => w.id === id);
+const einheit = (id) => D.einheiten.find((e) => e.id === id);
+const person = (id) => D.personen.find((p) => p.id === id);
+const pName = (p) => [p.titel, p.vorname, p.nachname].filter(Boolean).join(" ");
+const statusKlasse = (s) => ({ "Neu": "neu", "In Bearbeitung": "bearbeitung", "Erledigt": "erledigt" }[s]);
+const neueId = (p) => p + Math.random().toString(36).slice(2, 8);
+
+function toast(text) {
+  const ort = $("#toast-ort");
+  ort.innerHTML = `<div class="toast einblenden">${esc(text)}</div>`;
+  clearTimeout(toast.t); toast.t = setTimeout(() => (ort.innerHTML = ""), 3200);
+}
+
+function anfechtung(b) {
+  if (b.angefochten) return `<span class="pille angefochten">Angefochten</span>`;
+  const ende = new Date(b.datum + "T12:00:00"); ende.setMonth(ende.getMonth() + 1);
+  return ende > HEUTE
+    ? `<span class="pille frist">Anfechtungsfrist bis ${ende.toLocaleDateString("de-DE")}</span>`
+    : `<span class="pille bestand">Bestandskräftig</span>`;
+}
+
+// Sichtbarkeit wie in den Zugriffsregeln der Datenbank
+function erikaSieht(d) {
+  if (d.weg !== "w1") return false;
+  if (d.person && d.person !== ERIKA) return false;
+  if (d.einheit && d.einheit !== "e3") return false;
+  return true;
+}
+const istGelesen = (dok, pid) => Boolean(D.gelesen[dok]?.[pid]);
+
+const LOGO = `<svg class="logo" viewBox="0 0 360 132" role="img" aria-label="Pracht Immobiliengruppe" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="#1E3A2F" stroke-width="0.9"><line x1="44" y1="18" x2="316" y2="18"/><line x1="44" y1="22" x2="316" y2="22"/><line x1="44" y1="88" x2="316" y2="88"/><line x1="44" y1="92" x2="316" y2="92"/></g>
+  <text x="180" y="72" dx="5.7" text-anchor="middle" fill="#1E3A2F" font-size="44" letter-spacing="11.4" style="font-family:var(--serif)">PRACHT</text>
+  <text x="180" y="118" dx="1.9" text-anchor="middle" fill="#1E3A2F" font-size="10.5" letter-spacing="3.8" style="font-family:var(--sans)">IMMOBILIENGRUPPE</text></svg>`;
+const SCHILD = (h = 64) => `<svg viewBox="0 0 100 120" style="height:${h}px;width:auto" role="img" aria-label="Pracht" xmlns="http://www.w3.org/2000/svg">
+  <path d="M8 6 H92 V60 C92 89 72 105 50 115 C28 105 8 89 8 60 Z" fill="#EDE4D1" stroke="#1E3A2F" stroke-width="2"/>
+  <path d="M15 13 H85 V60 C85 84 67 98 50 107 C33 98 15 84 15 60 Z" fill="none" stroke="#1E3A2F" stroke-width="1"/>
+  <text x="51" y="78" text-anchor="middle" fill="#1E3A2F" font-size="62" font-style="italic" style="font-family:var(--garamond)">P</text></svg>`;
+
+// ---------------------------------------------------------------------------
+// Rahmen: Kopfzeile, Reiter, Demo-Knöpfe
+// ---------------------------------------------------------------------------
+const REITER = {
+  eigentuemer: [["uebersicht", "Übersicht"], ["dokumente", "Dokumente"], ["beschluesse", "Beschluss-Sammlung"], ["anliegen", "Anliegen"], ["brett", "Schwarzes Brett"], ["daten", "Meine Daten"]],
+  verwalter: [["dashboard", "Dashboard"], ["anliegen", "Anliegen"], ["eigentuemer", "Eigentümer"], ["dokumente", "Dokumente"], ["mitteilung", "Mitteilungen"], ["freigaben", "Mitarbeiter"]],
+};
+
+function rahmen() {
+  const angemeldet = S.rolle && S.schritt === "fertig";
+  $("#kopf").innerHTML = `${LOGO}<div class="wer">${angemeldet
+    ? `<span class="name">${S.rolle === "eigentuemer" ? "Erika Muster<br><span class='klein'>Eigentümerin WE 3</span>" : "Vera Verwalterin<br><span class='klein'>Verwalterin</span>"}</span>
+       <button class="knopf klein" data-aktion="abmelden">Abmelden</button>`
+    : ""}</div>`;
+  $("#demo-knoepfe").innerHTML = `
+    ${angemeldet ? `<button data-aktion="wechseln">Sicht wechseln: ${S.rolle === "eigentuemer" ? "Verwaltung" : "Eigentümerin"}</button>` : ""}
+    <button data-aktion="zuruecksetzen">Demo zurücksetzen</button>`;
+  const nav = $("#reiter");
+  nav.hidden = !angemeldet;
+  if (angemeldet) {
+    const zaehler = S.rolle === "eigentuemer"
+      ? { dokumente: D.dokumente.filter((d) => erikaSieht(d) && d.pflicht && !istGelesen(d.id, ERIKA)).length }
+      : { anliegen: D.anliegen.filter((a) => a.status === "Neu").length };
+    $("#reiter-innen").innerHTML = REITER[S.rolle].map(([id, t]) =>
+      `<button data-reiter="${id}" ${S.reiter === id ? 'aria-current="page"' : ""}>${t}${zaehler[id] ? `<span class="zahl">${zaehler[id]}</span>` : ""}</button>`).join("");
+  }
+}
+
+function zeigen() {
+  rahmen();
+  const ziel = $("#inhalt");
+  if (!S.rolle || S.schritt !== "fertig") ziel.innerHTML = anmeldung();
+  else ziel.innerHTML = (S.rolle === "eigentuemer" ? E : V)[S.reiter]();
+  ziel.firstElementChild?.classList.add("einblenden");
+}
+
+// ---------------------------------------------------------------------------
+// Anmeldung (simuliert: Konto wählen → Passwort → Zwei-Faktor-Code)
+// ---------------------------------------------------------------------------
+function anmeldung() {
+  if (S.schritt === "konto") return `
+    <div class="anmeldung">
+      <div class="mitte">${SCHILD()}<h1>Anmelden</h1><p class="leise klein">Wählen Sie ein Demo-Konto. Im echten Portal melden sich Eigentümer mit der E-Mail-Adresse an, an die ihre Einladung ging.</p></div>
+      <div class="konten">
+        <button class="konto" data-aktion="konto" data-rolle="eigentuemer"><span><strong>Erika Muster</strong><br><span class="leise klein">Eigentümerin, WE 3 · WEG Musterstraße 12</span></span><span aria-hidden="true">→</span></button>
+        <button class="konto" data-aktion="konto" data-rolle="verwalter"><span><strong>Vera Verwalterin</strong><br><span class="leise klein">Verwaltung · alle Gemeinschaften</span></span><span aria-hidden="true">→</span></button>
+      </div>
+    </div>`;
+  const wer = S.rolle === "eigentuemer" ? "erika.muster@beispiel.example" : "vera.verwalterin@pracht.example";
+  if (S.schritt === "passwort") return `
+    <form class="anmeldung" data-form="passwort">
+      <div class="mitte">${SCHILD()}<h1>Anmelden</h1></div>
+      <div class="flaeche stapel eng">
+        <label class="feld">E-Mail<input id="f-email" value="${wer}" readonly></label>
+        <label class="feld">Passwort<input id="f-pw" type="password" value="Demo-Passwort-2026" autocomplete="off"><span class="hinweis">Für die Demo schon ausgefüllt.</span></label>
+        <button class="knopf voll" type="submit">Anmelden</button>
+        <p class="klein leise" style="text-align:center">Passwort vergessen?</p>
+      </div>
+    </form>`;
+  return `
+    <form class="anmeldung" data-form="code">
+      <div class="mitte">${SCHILD()}<h1>Code eingeben</h1><p class="leise klein">Öffnen Sie Ihre Authenticator-App und geben Sie den aktuellen sechsstelligen Code für das Pracht Eigentümerportal ein.</p></div>
+      <div class="flaeche stapel eng">
+        <label class="feld">Sechsstelliger Code<input id="f-code" inputmode="numeric" maxlength="7" autocomplete="one-time-code" value="482 913"><span class="hinweis">In der Demo funktioniert jeder sechsstellige Code.</span></label>
+        <p class="klein" id="code-fehler" style="color:var(--fehler)" hidden>Bitte sechs Ziffern eingeben.</p>
+        <button class="knopf voll" type="submit">Bestätigen</button>
+      </div>
+    </form>`;
+}
+
+// ---------------------------------------------------------------------------
+// Eigentümer-Sicht (Erika Muster, WE 3)
+// ---------------------------------------------------------------------------
+const E = {
+  uebersicht() {
+    const w = weg("w1"), e = einheit("e3");
+    const offen = D.dokumente.filter((d) => erikaSieht(d) && d.pflicht && !istGelesen(d.id, ERIKA));
+    const meine = D.anliegen.filter((a) => a.person === ERIKA && a.status !== "Erledigt");
+    const neuste = [...D.mitteilungen].filter((m) => m.weg === "w1").sort((a, b) => b.datum.localeCompare(a.datum))[0];
+    return `<div class="stapel">
+      <section class="stapel eng">
+        <p class="eyebrow">Pracht Eigentümerportal</p>
+        <h1>Guten Tag, Erika Muster</h1>
+        <p class="leise">${esc(w.name)} · ${esc(e.nr)}, ${esc(e.lage)} · Miteigentumsanteil ${mea(e.mea)}/1.000</p>
+      </section>
+      ${offen.length ? `<div class="meldung warn">Sie haben ${offen.length} neue ${offen.length === 1 ? "Unterlage" : "Unterlagen"} zur Kenntnisnahme: ${offen.map((d) => `<strong>${esc(d.titel)}</strong>`).join(", ")}. <button class="knopf klein" data-reiter="dokumente" style="margin-left:6px">Ansehen</button></div>` : ""}
+      <section class="notfall" aria-labelledby="nf">
+        <h2 id="nf">Im Notfall</h2>
+        <p class="klein leise">Bei Wasserrohrbruch, Heizungsausfall oder steckengebliebenem Aufzug, auch nachts und am Wochenende:</p>
+        ${w.notfall.map((n) => `<div class="reihe"><span>${esc(n.was)}<br><span class="klein leise">${esc(n.hinweis)}</span></span><span class="tel">${esc(n.tel)}</span></div>`).join("")}
+      </section>
+      <section class="raster">
+        <button class="kpi" data-reiter="anliegen"><span class="eyebrow">Ihre Anliegen</span><span class="wert">${meine.length}</span><span class="klein leise">${meine.length ? esc(meine[0].betreff) + " · " + esc(meine[0].status) : "keine offenen"}</span></button>
+        <button class="kpi" data-reiter="beschluesse"><span class="eyebrow">Beschluss-Sammlung</span><span class="wert">${D.beschluesse.filter((b) => b.weg === "w1").length}</span><span class="klein leise">Beschlüsse, zuletzt ${datum(D.beschluesse.filter((b) => b.weg === "w1").map((b) => b.datum).sort().pop())}</span></button>
+        <button class="kpi" data-reiter="brett"><span class="eyebrow">Schwarzes Brett</span><span class="wert">${D.mitteilungen.filter((m) => m.weg === "w1").length}</span><span class="klein leise">Neu: ${esc(neuste.titel)}</span></button>
+      </section>
+      <section class="stapel eng">
+        <h2>Verkaufen, vermieten, bewerten</h2>
+        <p class="leise klein">Die Pracht Immobiliengruppe unterstützt Sie auch als Makler. Ihre Objektdaten werden automatisch übernommen.</p>
+        <div class="makler">
+          <button data-aktion="makler" data-art="Bewertung"><span class="titel">Wert ermitteln</span><span class="klein leise">Kostenlose Einschätzung Ihrer Wohnung</span></button>
+          <button data-aktion="makler" data-art="Vermietung"><span class="titel">Vermieten</span><span class="klein leise">Mietersuche und Vertrag aus einer Hand</span></button>
+          <button data-aktion="makler" data-art="Verkauf"><span class="titel">Verkaufen</span><span class="klein leise">Diskret und mit Unterlagen aus der Verwaltung</span></button>
+        </div>
+      </section>
+    </div>`;
+  },
+
+  dokumente() {
+    const alle = D.dokumente.filter(erikaSieht);
+    const kats = ["Alle", ...new Set(alle.map((d) => d.kat))];
+    const jahre = ["Alle", ...[...new Set(alle.map((d) => d.jahr))].sort((a, b) => b - a)];
+    const f = S.filter, q = f.suche.trim().toLowerCase();
+    const treffer = alle.filter((d) => (f.kat === "Alle" || d.kat === f.kat) && (f.jahr === "Alle" || String(d.jahr) === f.jahr) && (!q || (d.titel + " " + d.kat).toLowerCase().includes(q)))
+      .sort((a, b) => b.jahr - a.jahr);
+    return `<div class="stapel">
+      <section class="stapel eng"><h1>Dokumente</h1><p class="leise">${esc(weg("w1").name)}. Unterlagen mit dem Vermerk „persönlich“ sehen nur Sie.</p></section>
+      <div class="stapel eng">
+        <div class="chips" role="group" aria-label="Kategorie">${kats.map((k) => `<button data-aktion="kat" data-wert="${esc(k)}" aria-pressed="${f.kat === k}">${esc(k)}</button>`).join("")}</div>
+        <div class="filter">
+          <label class="feld">Suche<input id="dok-suche" type="search" placeholder="z. B. Wirtschaftsplan" value="${esc(f.suche)}"></label>
+          <label class="feld">Jahr<select id="dok-jahr">${jahre.map((j) => `<option ${String(j) === f.jahr ? "selected" : ""}>${j}</option>`).join("")}</select></label>
+        </div>
+      </div>
+      <ul class="liste" id="dok-liste">${treffer.map((d) => `<li>
+        <button class="zeile haupt" data-aktion="oeffnen" data-id="${d.id}">
+          <span class="titel">${esc(d.titel)}</span><br>
+          <span class="klein leise">${esc(d.kat)} · ${d.jahr} · PDF</span>
+        </button>
+        <span class="chips">${d.person ? `<span class="pille persoenlich">persönlich</span>` : ""}${d.einheit ? `<span class="pille persoenlich">Ihre Einheit</span>` : ""}${d.pflicht && !istGelesen(d.id, ERIKA) ? `<span class="pille ungelesen">Neu</span>` : istGelesen(d.id, ERIKA) ? `<span class="klein leise">gelesen ${datum(D.gelesen[d.id][ERIKA])}</span>` : ""}</span>
+      </li>`).join("") || `<li><span class="leise">Keine Dokumente für diese Auswahl.</span></li>`}</ul>
+    </div>`;
+  },
+
+  beschluesse() {
+    const q = S.bSuche.trim().toLowerCase();
+    const liste = D.beschluesse.filter((b) => b.weg === "w1" && (!q || (b.text + b.nr + b.top).toLowerCase().includes(q))).sort((a, b) => b.nr.localeCompare(a.nr));
+    return `<div class="stapel">
+      <section class="stapel eng"><h1>Beschluss-Sammlung</h1><p class="leise">Geführt nach § 24 Abs. 7 WEG. Stimmen nach Miteigentumsanteilen (von 1.000).</p></section>
+      <label class="feld">Suche im Wortlaut<input id="b-suche" type="search" placeholder="z. B. Fassade, Rücklage" value="${esc(S.bSuche)}"></label>
+      <ul class="liste" id="b-liste">${liste.map((b) => `<li>
+        <div class="haupt stapel eng" style="gap:6px">
+          <span class="klein leise">Nr. ${esc(b.nr)} · ${datum(b.datum)} · ${esc(b.top)}</span>
+          <span>${esc(b.text)}</span>
+          <span class="klein leise">${b.ergebnis === "angenommen" ? "Angenommen" : "Abgelehnt"} · Ja ${mea(b.ja)} · Nein ${mea(b.nein)} · Enthaltung ${mea(b.enth)}</span>
+          ${b.vermerk ? `<span class="klein" style="color:var(--fehler)">${esc(b.vermerk)}</span>` : ""}
+        </div>
+        ${anfechtung(b)}
+      </li>`).join("") || `<li><span class="leise">Kein Beschluss enthält „${esc(S.bSuche)}“.</span></li>`}</ul>
+    </div>`;
+  },
+
+  anliegen() {
+    const meine = D.anliegen.filter((a) => a.person === ERIKA).sort((a, b) => b.datum.localeCompare(a.datum));
+    return `<div class="stapel">
+      <section class="stapel eng" style="flex-direction:row;justify-content:space-between;align-items:end;flex-wrap:wrap">
+        <div class="stapel eng"><h1>Ihre Anliegen</h1><p class="leise">Schäden, Fragen und Anfragen an die Verwaltung, mit aktuellem Stand.</p></div>
+        <button class="knopf voll" data-aktion="melden">Anliegen melden</button>
+      </section>
+      ${anliegenListe(meine, false)}
+    </div>`;
+  },
+
+  brett() {
+    const liste = D.mitteilungen.filter((m) => m.weg === "w1").sort((a, b) => b.datum.localeCompare(a.datum));
+    return `<div class="stapel">
+      <section class="stapel eng"><h1>Schwarzes Brett</h1><p class="leise">Aushänge und Rundschreiben für ${esc(weg("w1").name)}.</p></section>
+      <ul class="liste">${liste.map((m) => `<li><div class="haupt stapel eng" style="gap:6px">
+        <span class="klein leise">${datum(m.datum)} · ${esc(m.art)}</span><span class="titel">${esc(m.titel)}</span><span>${esc(m.text)}</span></div></li>`).join("")}</ul>
+    </div>`;
+  },
+
+  daten() {
+    const p = person(ERIKA);
+    return `<div class="stapel">
+      <section class="stapel eng"><h1>Meine Daten</h1><p class="leise">Telefon und Anschrift pflegen Sie selbst. Name und E-Mail-Adresse ändert die Verwaltung auf Ihre Nachricht hin.</p></section>
+      <form class="flaeche stapel eng" data-form="daten">
+        <div class="raster">
+          <label class="feld">Name<input value="${esc(pName(p))}" readonly></label>
+          <label class="feld">E-Mail (Login)<input value="${esc(p.email)}" readonly></label>
+          <label class="feld">Telefon<input id="d-tel" value="${esc(p.telefon)}"></label>
+          <label class="feld">Straße und Hausnummer<input id="d-str" value="${esc(p.strasse)}"></label>
+          <label class="feld">PLZ<input id="d-plz" value="${esc(p.plz)}" inputmode="numeric" maxlength="5"></label>
+          <label class="feld">Ort<input id="d-ort" value="${esc(p.ort)}"></label>
+        </div>
+        <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="d-post" ${p.post ? "checked" : ""}> Ich möchte Unterlagen zusätzlich per Post erhalten</label>
+        <div><button class="knopf voll" type="submit">Speichern</button></div>
+      </form>
+      <section class="stapel eng">
+        <h2>Sicherheit</h2>
+        <p class="klein">Zwei-Faktor-Anmeldung: <strong>aktiv</strong> (Authenticator-App, eingerichtet am 01.10.2026)</p>
+      </section>
+      <section class="stapel eng">
+        <h2>Datenauskunft</h2>
+        <p class="klein leise">Nach Art. 15 DSGVO können Sie jederzeit einsehen, welche Daten wir zu Ihrer Person gespeichert haben.</p>
+        <div><button class="knopf" data-aktion="auskunft">Meine Daten anzeigen</button></div>
+      </section>
+    </div>`;
+  },
+};
+
+function anliegenListe(liste, verwaltung) {
+  if (!liste.length) return `<p class="leise">Noch keine Anliegen.</p>`;
+  return `<ul class="liste">${liste.map((a) => {
+    const p = person(a.person), e = einheit(a.einheit);
+    return `<li>
+      <button class="zeile haupt" data-aktion="anliegen" data-id="${a.id}">
+        <span class="klein leise">${datum(a.datum)} · ${esc(a.art)}${verwaltung ? ` · ${esc(pName(p))}, ${esc(e?.nr ?? "")}` : ""}${a.ort ? " · " + esc(a.ort) : ""}</span><br>
+        <span class="titel">${esc(a.betreff)}</span>
+      </button>
+      <span class="pille ${statusKlasse(a.status)}">${esc(a.status)}</span>
+    </li>`;
+  }).join("")}</ul>`;
+}
+
+// ---------------------------------------------------------------------------
+// Verwaltungs-Sicht (Vera Verwalterin)
+// ---------------------------------------------------------------------------
+const V = {
+  dashboard() {
+    const offen = D.anliegen.filter((a) => a.status !== "Erledigt");
+    const makler = D.anliegen.filter((a) => a.art.startsWith("Makleranfrage") && a.status === "Neu");
+    const pflicht = D.dokumente.filter((d) => d.pflicht);
+    let ungelesen = 0;
+    pflicht.forEach((d) => empfaenger(d).forEach((p) => { if (!istGelesen(d.id, p.id)) ungelesen++; }));
+    const auslaufend = D.wegs.filter((w) => tageBis(w.bestelltBis) < 180);
+    return `<div class="stapel">
+      <section class="stapel eng"><p class="eyebrow">Verwaltung</p><h1>Guten Tag, Vera Verwalterin</h1><p class="leise">Stand ${HEUTE.toLocaleDateString("de-DE")} · ${D.wegs.length} Gemeinschaften · ${D.einheiten.length} Einheiten</p></section>
+      <section class="raster">
+        <button class="kpi ${offen.length ? "achtung" : ""}" data-reiter="anliegen"><span class="eyebrow">Offene Anliegen</span><span class="wert">${offen.length}</span><span class="klein leise">davon ${offen.filter((a) => a.status === "Neu").length} neu</span></button>
+        <button class="kpi ${makler.length ? "achtung" : ""}" data-reiter="anliegen"><span class="eyebrow">Neue Makleranfragen</span><span class="wert">${makler.length}</span><span class="klein leise">${makler.map((a) => esc(a.betreff)).join(", ") || "keine"}</span></button>
+        <button class="kpi" data-reiter="dokumente"><span class="eyebrow">Ungelesene Pflichtdokumente</span><span class="wert">${ungelesen}</span><span class="klein leise">Lesebestätigungen fehlen</span></button>
+        <button class="kpi ${auslaufend.length ? "achtung" : ""}" data-reiter="eigentuemer"><span class="eyebrow">Verwalterbestellung</span><span class="wert">${auslaufend.length}</span><span class="klein leise">${auslaufend.map((w) => `${esc(w.name)} endet ${datum(w.bestelltBis)} (in ${tageBis(w.bestelltBis)} Tagen)`).join("; ") || "keine läuft in 6 Monaten aus"}</span></button>
+      </section>
+      ${auslaufend.length ? `<div class="meldung warn">Die Bestellung für <strong>${esc(auslaufend[0].name)}</strong> endet am ${datum(auslaufend[0].bestelltBis)}. Die Wiederbestellung sollte auf die Tagesordnung der nächsten Versammlung.</div>` : ""}
+      <section class="stapel eng"><h2>Gemeinschaften</h2>
+        <ul class="liste">${D.wegs.map((w) => `<li><div class="haupt"><span class="titel">${esc(w.name)}</span><br><span class="klein leise">${esc(w.strasse)}, ${esc(w.plz)} ${esc(w.ort)} · Baujahr ${w.baujahr} · ${((n) => n === 1 ? "1 Einheit" : n + " Einheiten")(D.einheiten.filter((e) => e.weg === w.id).length)} · Stimmrecht nach ${esc(w.prinzip)}</span></div>
+          <span class="klein leise">bestellt bis ${datum(w.bestelltBis)}</span></li>`).join("")}</ul>
+      </section>
+    </div>`;
+  },
+
+  anliegen() {
+    const liste = [...D.anliegen].sort((a, b) => (a.status === "Erledigt") - (b.status === "Erledigt") || b.datum.localeCompare(a.datum));
+    return `<div class="stapel">
+      <section class="stapel eng"><h1>Anliegen</h1><p class="leise">Alle Meldungen aus den Gemeinschaften. Status ändern Sie im Anliegen; die Eigentümer sehen ihn sofort.</p></section>
+      ${anliegenListe(liste, true)}
+    </div>`;
+  },
+
+  eigentuemer() {
+    const zugang = { aktiv: ["Zugang aktiv", "erledigt"], eingeladen: ["Eingeladen", "bearbeitung"], offen: ["Noch nicht eingeladen", "neu"], post: ["Post statt Portal", "bestand"] };
+    return `<div class="stapel">
+      <section class="stapel eng"><h1>Eigentümer</h1><p class="leise">${esc(weg("w1").name)}: 8 Einheiten, 10 Eigentümer, Summe der Miteigentumsanteile 1.000,0.</p></section>
+      <div class="tabelle"><table>
+        <thead><tr><th>Einheit</th><th>Lage</th><th class="r">MEA</th><th>Eigentümer</th><th>Portal</th><th></th></tr></thead>
+        <tbody>${D.einheiten.filter((e) => e.weg === "w1").map((e) => D.personen.filter((p) => p.einheit === e.id).map((p, i) => `<tr>
+          <td>${i === 0 ? esc(e.nr) : ""}</td><td>${i === 0 ? esc(e.lage) : ""}</td><td class="r">${i === 0 ? mea(e.mea) : ""}</td>
+          <td>${esc(pName(p))}${p.hinweis ? `<br><span class="klein leise">${esc(p.hinweis)}</span>` : ""}</td>
+          <td><span class="pille ${zugang[p.zugang][1]}">${zugang[p.zugang][0]}</span></td>
+          <td>${p.zugang === "offen" ? `<button class="knopf klein" data-aktion="einladen" data-id="${p.id}">Einladen</button>` : ""}</td>
+        </tr>`).join("")).join("")}</tbody>
+      </table></div>
+      <p class="klein leise">Im echten Portal kommen Eigentümer auch per CSV-Import ins System. Die Einladung geht als E-Mail im Pracht-Look raus; die Person legt ihr Passwort fest und richtet Zwei-Faktor ein.</p>
+    </div>`;
+  },
+
+  dokumente() {
+    const liste = D.dokumente.filter((d) => d.weg === "w1").sort((a, b) => b.jahr - a.jahr);
+    return `<div class="stapel">
+      <section class="stapel eng" style="flex-direction:row;justify-content:space-between;align-items:end;flex-wrap:wrap">
+        <div class="stapel eng"><h1>Dokumente</h1><p class="leise">${esc(weg("w1").name)}. Bei Pflichtdokumenten sehen Sie, wer schon gelesen hat.</p></div>
+        <button class="knopf voll" data-aktion="hochladen">Dokument hochladen</button>
+      </section>
+      <ul class="liste">${liste.map((d) => {
+        const emp = empfaenger(d), gel = emp.filter((p) => istGelesen(d.id, p.id)).length;
+        return `<li><button class="zeile haupt" data-aktion="lesestand" data-id="${d.id}"><span class="titel">${esc(d.titel)}</span><br>
+          <span class="klein leise">${esc(d.kat)} · ${d.jahr} · sichtbar für ${d.person ? "nur " + esc(pName(person(d.person))) : d.einheit ? "Eigentümer " + esc(einheit(d.einheit).nr) : "alle Eigentümer"}</span></button>
+          ${d.pflicht ? `<span class="klein" style="font-variant-numeric:tabular-nums">${gel} von ${emp.length} gelesen</span>` : ""}</li>`;
+      }).join("")}</ul>
+    </div>`;
+  },
+
+  mitteilung() {
+    const liste = [...D.mitteilungen].sort((a, b) => b.datum.localeCompare(a.datum));
+    return `<div class="stapel">
+      <section class="stapel eng"><h1>Mitteilungen</h1><p class="leise">Aushang am schwarzen Brett oder Rundschreiben an alle Eigentümer, jeweils mit E-Mail-Benachrichtigung.</p></section>
+      <form class="flaeche stapel eng" data-form="mitteilung">
+        <div class="filter">
+          <label class="feld">Gemeinschaft<select id="m-weg">${D.wegs.map((w) => `<option value="${w.id}">${esc(w.name)}</option>`).join("")}</select></label>
+          <label class="feld">Art<select id="m-art"><option>Aushang</option><option>Rundschreiben</option></select></label>
+        </div>
+        <label class="feld">Titel<input id="m-titel" required placeholder="z. B. Treppenhausreinigung"></label>
+        <label class="feld">Text<textarea id="m-text" rows="4" required></textarea></label>
+        <div><button class="knopf voll" type="submit">Veröffentlichen und benachrichtigen</button></div>
+      </form>
+      <ul class="liste">${liste.map((m) => `<li><div class="haupt"><span class="klein leise">${datum(m.datum)} · ${esc(m.art)} · ${esc(weg(m.weg).name)}</span><br><span class="titel">${esc(m.titel)}</span></div></li>`).join("")}</ul>
+    </div>`;
+  },
+
+  freigaben() {
+    return `<div class="stapel">
+      <section class="stapel eng"><h1>Mitarbeiter</h1><p class="leise">Mitarbeiter sehen nur die Gemeinschaften, die Sie freigeben. Löschen, Rollen ändern und das Zugriffsprotokoll bleiben Ihnen vorbehalten.</p></section>
+      <div class="tabelle"><table><thead><tr><th>Mitarbeiter</th><th>Freigabe</th></tr></thead><tbody>
+        ${D.mitarbeiter.map((m) => `<tr><td>${esc(m.name)}</td><td><label class="feld"><select data-aktion="freigabe" data-id="${m.id}" aria-label="Freigabe für ${esc(m.name)}">
+          <option value="" ${!m.freigabe ? "selected" : ""}>Keine Freigabe (sieht nichts)</option>
+          ${D.wegs.map((w) => `<option value="${w.id}" ${m.freigabe === w.id ? "selected" : ""}>Nur ${esc(w.name)}</option>`).join("")}
+          <option value="alle" ${m.freigabe === "alle" ? "selected" : ""}>Alle Gemeinschaften</option></select></label></td></tr>`).join("")}
+      </tbody></table></div>
+      <section class="stapel eng"><h2>Zugriffsprotokoll</h2><p class="klein leise">Jede Änderung und jedes geöffnete Dokument wird protokolliert. Nur Sie als Verwalterin können das Protokoll lesen, niemand kann es ändern.</p>
+        <ul class="verlauf">${(D.protokoll ?? []).slice(-6).reverse().map((z) => `<li>${esc(z)}</li>`).join("") || `<li class="leise">Noch keine Einträge in dieser Demo-Sitzung.</li>`}</ul>
+      </section>
+    </div>`;
+  },
+};
+
+// Wer muss ein Dokument lesen? (aktuelle Eigentümer mit Portalzugang)
+function empfaenger(d) {
+  return D.personen.filter((p) => {
+    const e = einheit(p.einheit);
+    if (!e || e.weg !== d.weg) return false;
+    if (d.person) return p.id === d.person;
+    if (d.einheit) return p.einheit === d.einheit;
+    return p.zugang === "aktiv";
+  });
+}
+function protokoll(text) {
+  D.protokoll = D.protokoll ?? [];
+  D.protokoll.push(`${HEUTE.toLocaleDateString("de-DE")} · ${S.rolle === "verwalter" ? "Vera Verwalterin" : "Erika Muster"}: ${text}`);
+}
+
+// ---------------------------------------------------------------------------
+// Dialoge
+// ---------------------------------------------------------------------------
+function dialog(titel, inhalt) {
+  $("#dialog-ort").innerHTML = `<div class="schleier" data-aktion="schliessen-hinter"><div class="dialog einblenden" role="dialog" aria-modal="true" aria-label="${esc(titel)}">
+    <div class="kopfzeile"><h2>${esc(titel)}</h2><button class="schliessen" data-aktion="schliessen" aria-label="Schließen">×</button></div>${inhalt}</div></div>`;
+  $("#dialog-ort .dialog").querySelector("input, select, textarea, button.knopf, .schliessen")?.focus();
+}
+const schliessen = () => ($("#dialog-ort").innerHTML = "");
+
+function dokumentAnsicht(d) {
+  const e = einheit("e3"), anteil = e.mea / 1000;
+  const kopf = `<div class="briefkopf"><span style="font-family:var(--serif);letter-spacing:.26em">PRACHT</span><span class="klein leise">${esc(weg(d.weg).name)}</span></div>`;
+  if (d.art === "abrechnung") {
+    const posten = [["Heizung und Warmwasser", 38420, "nach Verbrauch (HeizkostenV)", 3712.4], ["Hausmeister", 9600, "MEA"], ["Gebäudeversicherung", 6840, "MEA"], ["Aufzug Wartung und Strom", 4210, "MEA"], ["Treppenhausreinigung", 5280, "MEA"], ["Allgemeinstrom", 1460, "MEA"], ["Verwaltervergütung", 8064, "je Einheit", 1008], ["Zuführung Erhaltungsrücklage", 18000, "MEA"]];
+    let summe = 0;
+    const zeilen = posten.map(([k, g, s, fest]) => { const a = fest ?? g * anteil; summe += a; return `<tr><td>${k}</td><td class="r">${euro(g)}</td><td>${s}</td><td class="r">${euro(a)}</td></tr>`; }).join("");
+    const voraus = 12 * 1260;
+    return `<div class="blatt">${kopf}<h3>Einzelabrechnung 2025 · ${e.nr} · Erika Muster</h3>
+      <p class="klein leise">Abrechnungszeitraum 01.01.–31.12.2025 · Miteigentumsanteil ${mea(e.mea)}/1.000</p>
+      <div class="tabelle"><table><thead><tr><th>Kostenart</th><th class="r">Gesamt</th><th>Schlüssel</th><th class="r">Ihr Anteil</th></tr></thead><tbody>${zeilen}
+        <tr class="summe"><td colspan="3">Summe Ihrer Kosten</td><td class="r">${euro(summe)}</td></tr>
+        <tr><td colspan="3">Hausgeld-Vorauszahlungen (12 × ${euro(1260)})</td><td class="r">− ${euro(voraus)}</td></tr>
+        <tr class="summe"><td colspan="3">Abrechnungsspitze (${summe - voraus > 0 ? "Nachzahlung" : "Guthaben"})</td><td class="r">${euro(Math.abs(summe - voraus))}</td></tr></tbody></table></div>
+      <p class="klein leise">Beschlossen in der Versammlung am 14.05.2026 (Beschluss Nr. 2026/01). Fällig zum 01.07.2026.</p></div>`;
+  }
+  if (d.art === "wirtschaftsplan") return `<div class="blatt">${kopf}<h3>Wirtschaftsplan 2026</h3>
+    <div class="tabelle"><table><thead><tr><th>Position</th><th class="r">Ansatz 2026</th><th class="r">Ist 2025</th></tr></thead><tbody>
+    <tr><td>Bewirtschaftungskosten</td><td class="r">${euro(76500)}</td><td class="r">${euro(73874)}</td></tr>
+    <tr><td>Zuführung Erhaltungsrücklage</td><td class="r">${euro(18000)}</td><td class="r">${euro(18000)}</td></tr>
+    <tr class="summe"><td>Gesamt</td><td class="r">${euro(94500)}</td><td class="r">${euro(91874)}</td></tr></tbody></table></div>
+    <p class="klein">Ihr monatliches Hausgeld ab 01.01.2026: <strong>${euro(1295)}</strong> (${e.nr}, MEA ${mea(e.mea)})</p></div>`;
+  if (d.art === "vermoegen") return `<div class="blatt">${kopf}<h3>Vermögensbericht zum 31.12.2025</h3>
+    <div class="tabelle"><table><tbody>
+    <tr><td>Erhaltungsrücklage</td><td class="r">${euro(142380.55)}</td></tr><tr><td>Girokonto der Gemeinschaft</td><td class="r">${euro(11204.18)}</td></tr>
+    <tr><td>Forderungen gegen Eigentümer (Hausgeldrückstände)</td><td class="r">${euro(0)}</td></tr><tr><td>Verbindlichkeiten (offene Rechnungen)</td><td class="r">− ${euro(3118.4)}</td></tr>
+    <tr class="summe"><td>Gemeinschaftsvermögen</td><td class="r">${euro(150466.33)}</td></tr></tbody></table></div>
+    <p class="klein leise">Wesentliches Gemeinschaftsvermögen nach § 28 Abs. 4 WEG: Rücklage, Konten, Heizungsanlage (Baujahr 2019).</p></div>`;
+  if (d.art === "protokoll") return `<div class="blatt">${kopf}<h3>Niederschrift über die ordentliche Eigentümerversammlung am 14.05.2026</h3>
+    <p class="klein">Ort: Gemeindesaal Stuttgart-West, Beginn 18:30 Uhr. Vorsitz: Vera Verwalterin (Pracht Immobiliengruppe). Anwesend oder vertreten: 875,5/1.000 MEA – beschlussfähig.</p>
+    <p class="klein">TOP 2 Jahresabrechnung 2025 · TOP 3 Wirtschaftsplan 2026 · TOP 5 Fassadenreinigung · TOP 6 Ladestationen Tiefgarage</p>
+    <p class="klein leise">Die Beschlüsse im Wortlaut finden Sie in der Beschluss-Sammlung (Nr. 2026/01 bis 2026/04).</p></div>`;
+  return `<div class="blatt">${kopf}<h3>${esc(d.titel)}</h3><p class="klein leise">Vorschau dieses Dokuments ist in der Demo nicht hinterlegt. Im Portal öffnet sich hier die PDF-Datei.</p></div>`;
+}
+
+// ---------------------------------------------------------------------------
+// Aktionen
+// ---------------------------------------------------------------------------
+document.addEventListener("click", (ev) => {
+  const r = ev.target.closest("[data-reiter]");
+  if (r) { S.reiter = r.dataset.reiter; schliessen(); zeigen(); window.scrollTo(0, 0); return; }
+  const el = ev.target.closest("[data-aktion]");
+  if (!el) return;
+  const a = el.dataset.aktion, id = el.dataset.id;
+
+  if (a === "schliessen-hinter" && ev.target !== el) return;
+  if (a === "schliessen" || a === "schliessen-hinter") return schliessen();
+  if (a === "konto") { S.rolle = el.dataset.rolle; S.schritt = "passwort"; return zeigen(); }
+  if (a === "abmelden") { S.rolle = null; S.schritt = "konto"; return zeigen(); }
+  if (a === "wechseln") { S.rolle = S.rolle === "eigentuemer" ? "verwalter" : "eigentuemer"; S.reiter = S.rolle === "eigentuemer" ? "uebersicht" : "dashboard"; return zeigen(); }
+  if (a === "zuruecksetzen") {
+    if (el.dataset.sicher !== "1") { el.dataset.sicher = "1"; el.textContent = "Wirklich zurücksetzen?"; setTimeout(() => { el.dataset.sicher = ""; el.textContent = "Demo zurücksetzen"; }, 3000); return; }
+    D = startdaten(); speichern(); S.filter = { kat: "Alle", jahr: "Alle", suche: "" }; S.bSuche = ""; toast("Demo auf den Anfangsstand zurückgesetzt."); return zeigen();
+  }
+  if (a === "kat") { S.filter.kat = el.dataset.wert; return zeigen(); }
+
+  if (a === "oeffnen") {
+    const d = D.dokumente.find((x) => x.id === id);
+    const neu = !istGelesen(id, ERIKA);
+    if (neu) { (D.gelesen[id] = D.gelesen[id] ?? {})[ERIKA] = heuteIso(); protokoll(`Dokument geöffnet: ${d.titel}`); speichern(); }
+    dialog(d.titel, `${dokumentAnsicht(d)}<p class="klein leise">${neu ? "Lesebestätigung gespeichert: " : "Gelesen am "}${datum(D.gelesen[id][ERIKA])}. Die Verwaltung sieht, dass Sie das Dokument geöffnet haben.</p>`);
+    rahmen(); if (S.reiter === "dokumente") $("#inhalt").innerHTML = E.dokumente();
+    return;
+  }
+
+  if (a === "makler") {
+    const art = el.dataset.art, e = einheit("e3"), w = weg("w1");
+    dialog(`${art === "Bewertung" ? "Wert ermitteln" : art === "Vermietung" ? "Wohnung vermieten" : "Wohnung verkaufen"}`, `
+      <form class="stapel eng" data-form="makler" data-art="${art}">
+        <p class="klein leise">Diese Angaben haben wir aus Ihren Objektdaten übernommen:</p>
+        <div class="flaeche klein" style="padding:14px">${esc(w.strasse)}, ${esc(w.plz)} ${esc(w.ort)} · ${esc(e.nr)}, ${esc(e.lage)} · Baujahr ${w.baujahr} · MEA ${mea(e.mea)}/1.000</div>
+        <label class="feld">Zeitrahmen<select id="mk-zeit"><option>So bald wie möglich</option><option>In den nächsten 6 Monaten</option><option>Nur informieren</option></select></label>
+        <label class="feld">Nachricht (freiwillig)<textarea id="mk-text" rows="3" placeholder="z. B. Wohnung ist derzeit selbst genutzt"></textarea></label>
+        <button class="knopf voll" type="submit">Anfrage senden</button>
+      </form>`);
+    return;
+  }
+
+  if (a === "melden") {
+    dialog("Anliegen melden", `
+      <form class="stapel eng" data-form="melden">
+        <label class="feld">Art<select id="n-art"><option>Schaden</option><option>Frage</option></select></label>
+        <label class="feld">Betreff<input id="n-betreff" required placeholder="z. B. Licht im Treppenhaus defekt"></label>
+        <label class="feld">Wo im Gebäude?<select id="n-ort"><option>Treppenhaus</option><option>Keller</option><option>Tiefgarage</option><option>Hauseingang</option><option>Dach / Fassade</option><option>Außenanlage</option><option>In meiner Wohnung (Gemeinschaftseigentum)</option></select></label>
+        <label class="feld">Beschreibung<textarea id="n-text" rows="4" required></textarea></label>
+        <label class="feld">Fotos (freiwillig)<input id="n-fotos" type="file" accept="image/*" multiple><span class="hinweis">Fotos bleiben in der Demo nur in diesem Browserfenster.</span></label>
+        <div class="fotos" id="n-vorschau"></div>
+        <button class="knopf voll" type="submit">Absenden</button>
+      </form>`);
+    return;
+  }
+
+  if (a === "anliegen") {
+    const x = D.anliegen.find((y) => y.id === id), p = person(x.person), e = einheit(x.einheit);
+    const verw = S.rolle === "verwalter";
+    dialog(x.betreff, `
+      <div class="stapel eng">
+        <p class="klein leise">${datum(x.datum)} · ${esc(x.art)}${x.ort ? " · " + esc(x.ort) : ""}${verw ? ` · ${esc(pName(p))}, ${esc(e?.nr ?? "")}, ${esc(weg(x.weg).name)}` : ""}</p>
+        <p>${esc(x.text)}</p>
+        ${x.fotos?.length ? `<div class="fotos">${x.fotos.map((f) => `<img src="${f}" alt="Foto zum Anliegen">`).join("")}</div>` : ""}
+        <h3>Verlauf</h3>
+        <ul class="verlauf">${x.verlauf.map(([d, t]) => `<li><span class="klein leise">${datum(d)}</span><br>${esc(t)}</li>`).join("")}</ul>
+        ${verw ? `<form class="flaeche stapel eng" data-form="status" data-id="${x.id}">
+          <label class="feld">Status<select id="s-status">${["Neu", "In Bearbeitung", "Erledigt"].map((s) => `<option ${s === x.status ? "selected" : ""}>${s}</option>`).join("")}</select></label>
+          <label class="feld">Nachricht an ${esc(p.vorname)} ${esc(p.nachname)}<textarea id="s-text" rows="2" placeholder="z. B. Handwerker kommt am Donnerstag"></textarea></label>
+          <button class="knopf voll" type="submit">Speichern</button></form>`
+        : `<p><span class="pille ${statusKlasse(x.status)}">${esc(x.status)}</span></p>`}
+      </div>`);
+    return;
+  }
+
+  if (a === "einladen") {
+    const p = person(id); p.zugang = "eingeladen"; protokoll(`Einladung versendet an ${pName(p)}`); speichern(); zeigen();
+    return toast(`Einladung an ${pName(p)} versendet (${p.email}).`);
+  }
+
+  if (a === "lesestand") {
+    const d = D.dokumente.find((x) => x.id === id), emp = empfaenger(d);
+    dialog(d.titel, `<p class="klein leise">${esc(d.kat)} · ${d.jahr}${d.pflicht ? " · Pflichtdokument" : ""}</p>
+      ${emp.length ? `<ul class="liste">${emp.map((p) => `<li><span>${esc(pName(p))} <span class="klein leise">${esc(einheit(p.einheit).nr)}</span></span>
+        ${istGelesen(d.id, p.id) ? `<span class="klein">gelesen ${datum(D.gelesen[d.id][p.id])}</span>` : `<span class="pille neu">ungelesen</span>`}</li>`).join("")}</ul>` : `<p class="leise">Keine Empfänger.</p>`}`);
+    return;
+  }
+
+  if (a === "hochladen") {
+    dialog("Dokument hochladen", `<form class="stapel eng" data-form="hochladen">
+      <label class="feld">Titel<input id="h-titel" required placeholder="z. B. Protokoll Beiratssitzung"></label>
+      <div class="filter">
+        <label class="feld">Kategorie<select id="h-kat"><option>Protokoll</option><option>Abrechnung</option><option>Wirtschaftsplan</option><option>Vermögensbericht</option><option>Vertrag</option><option>Plan</option><option>Sonstiges</option></select></label>
+        <label class="feld">Jahr<input id="h-jahr" inputmode="numeric" value="2026"></label>
+      </div>
+      <label class="feld">Sichtbar für<select id="h-fuer"><option value="">Alle Eigentümer der WEG Musterstraße 12</option>${D.personen.filter((p) => einheit(p.einheit).weg === "w1").map((p) => `<option value="${p.id}">Nur ${esc(pName(p))} (persönlich)</option>`).join("")}</select></label>
+      <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" id="h-pflicht"> Pflichtdokument (Lesebestätigung nachverfolgen)</label>
+      <label class="feld">Datei<input type="file" accept="application/pdf"><span class="hinweis">In der Demo wird die Datei nicht hochgeladen.</span></label>
+      <button class="knopf voll" type="submit">Hochladen und Eigentümer benachrichtigen</button></form>`);
+    return;
+  }
+
+  if (a === "auskunft") {
+    const p = person(ERIKA), e = einheit("e3");
+    dialog("Ihre gespeicherten Daten", `<div class="blatt">
+      <h3>Auskunft nach Art. 15 DSGVO · Stand ${HEUTE.toLocaleDateString("de-DE")}</h3>
+      <div class="tabelle"><table><tbody>
+        <tr><td>Name</td><td>${esc(pName(p))}</td></tr><tr><td>E-Mail</td><td>${esc(p.email)}</td></tr><tr><td>Telefon</td><td>${esc(p.telefon)}</td></tr>
+        <tr><td>Anschrift</td><td>${esc(p.strasse)}, ${esc(p.plz)} ${esc(p.ort)}</td></tr><tr><td>Post statt Portal</td><td>${p.post ? "ja" : "nein"}</td></tr>
+        <tr><td>Eigentum</td><td>${esc(weg("w1").name)}, ${esc(e.nr)}, seit 01.01.2020</td></tr>
+        <tr><td>Anliegen</td><td>${D.anliegen.filter((x) => x.person === ERIKA).length}</td></tr>
+        <tr><td>Lesebestätigungen</td><td>${Object.values(D.gelesen).filter((g) => g[ERIKA]).length}</td></tr>
+        <tr><td>Persönliche Dokumente</td><td>${D.dokumente.filter((d) => d.person === ERIKA).map((d) => esc(d.titel)).join(", ")}</td></tr>
+      </tbody></table></div><p class="klein leise">Daten anderer Eigentümer sind in dieser Auskunft nie enthalten.</p></div>`);
+    return;
+  }
+});
+
+document.addEventListener("change", (ev) => {
+  const t = ev.target;
+  if (t.id === "dok-jahr") { S.filter.jahr = t.value; zeigen(); }
+  if (t.dataset.aktion === "freigabe") {
+    const m = D.mitarbeiter.find((x) => x.id === t.dataset.id); m.freigabe = t.value;
+    protokoll(`Freigabe geändert: ${m.name} → ${t.value === "alle" ? "alle Gemeinschaften" : t.value ? weg(t.value).name : "keine"}`); speichern(); zeigen();
+    toast(`${m.name}: Freigabe gespeichert.`);
+  }
+  if (t.id === "n-fotos") {
+    const ort = $("#n-vorschau"); ort.innerHTML = ""; ort.dataset.fotos = "[]";
+    const daten = [];
+    [...t.files].slice(0, 4).forEach((f) => {
+      const r = new FileReader();
+      r.onload = () => { daten.push(r.result); ort.insertAdjacentHTML("beforeend", `<img src="${r.result}" alt="Vorschau">`); ort.dataset.fotos = JSON.stringify(daten); };
+      r.readAsDataURL(f);
+    });
+  }
+});
+
+document.addEventListener("input", (ev) => {
+  const t = ev.target;
+  if (t.id === "dok-suche") { S.filter.suche = t.value; const pos = t.selectionStart; zeigen(); const n = $("#dok-suche"); n.focus(); n.setSelectionRange(pos, pos); }
+  if (t.id === "b-suche") { S.bSuche = t.value; const pos = t.selectionStart; zeigen(); const n = $("#b-suche"); n.focus(); n.setSelectionRange(pos, pos); }
+});
+
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") schliessen(); });
+
+document.addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  const f = ev.target, art = f.dataset.form, wert = (id) => ($("#" + id)?.value ?? "").trim();
+
+  if (art === "passwort") { S.schritt = "code"; return zeigen(); }
+  if (art === "code") {
+    if (!/^\d{6}$/.test(wert("f-code").replace(/\s/g, ""))) { $("#code-fehler").hidden = false; return; }
+    S.schritt = "fertig"; S.reiter = S.rolle === "eigentuemer" ? "uebersicht" : "dashboard"; return zeigen();
+  }
+  if (art === "daten") {
+    const p = person(ERIKA);
+    if (wert("d-plz") && !/^\d{5}$/.test(wert("d-plz"))) return toast("Bitte eine fünfstellige Postleitzahl eingeben.");
+    Object.assign(p, { telefon: wert("d-tel"), strasse: wert("d-str"), plz: wert("d-plz"), ort: wert("d-ort"), post: $("#d-post").checked });
+    protokoll("Eigene Kontaktdaten geändert"); speichern(); return toast("Ihre Kontaktdaten sind gespeichert.");
+  }
+  if (art === "makler") {
+    const typ = f.dataset.art, e = einheit("e3");
+    D.anliegen.push({ id: neueId("a"), weg: "w1", einheit: "e3", person: ERIKA, art: "Makleranfrage: " + typ, betreff: `${typ === "Bewertung" ? "Wert ermitteln" : typ === "Vermietung" ? "Vermieten" : "Verkaufen"} – ${e.nr}`,
+      text: `${wert("mk-zeit")}. ${wert("mk-text")}`.trim(), ort: "", status: "Neu", datum: heuteIso(), fotos: [], verlauf: [[heuteIso(), "Anfrage gesendet"]] });
+    speichern(); schliessen(); zeigen(); return toast("Danke! Ihre Anfrage ist bei uns eingegangen. Wir melden uns innerhalb von zwei Werktagen.");
+  }
+  if (art === "melden") {
+    let fotos = []; try { fotos = JSON.parse($("#n-vorschau").dataset.fotos || "[]"); } catch (e) {}
+    D.anliegen.push({ id: neueId("a"), weg: "w1", einheit: "e3", person: ERIKA, art: wert("n-art"), betreff: wert("n-betreff"), text: wert("n-text"), ort: wert("n-ort"), status: "Neu", datum: heuteIso(), fotos, verlauf: [[heuteIso(), "Gemeldet"]] });
+    try { speichern(); } catch (e) {}
+    schliessen(); S.reiter = "anliegen"; zeigen(); return toast("Anliegen gemeldet. Den Stand sehen Sie hier jederzeit.");
+  }
+  if (art === "status") {
+    const x = D.anliegen.find((y) => y.id === f.dataset.id), neu = wert("s-status"), txt = wert("s-text");
+    if (neu !== x.status) x.verlauf.push([heuteIso(), `Verwaltung: Status „${neu}“`]);
+    if (txt) x.verlauf.push([heuteIso(), "Verwaltung: " + txt]);
+    x.status = neu; protokoll(`Anliegen „${x.betreff}“ bearbeitet`); speichern(); schliessen(); zeigen();
+    return toast(`Gespeichert. ${pName(person(x.person))} sieht den neuen Stand.`);
+  }
+  if (art === "mitteilung") {
+    const w = wert("m-weg");
+    D.mitteilungen.push({ id: neueId("m"), weg: w, art: wert("m-art"), titel: wert("m-titel"), text: wert("m-text"), datum: heuteIso() });
+    protokoll(`Mitteilung veröffentlicht: ${wert("m-titel")}`); speichern(); zeigen();
+    const anzahl = D.personen.filter((p) => einheit(p.einheit).weg === w && p.email).length;
+    return toast(`Veröffentlicht. ${anzahl} Eigentümer werden per E-Mail benachrichtigt.`);
+  }
+  if (art === "hochladen") {
+    const fuer = wert("h-fuer");
+    D.dokumente.push({ id: neueId("d"), weg: "w1", kat: wert("h-kat"), titel: wert("h-titel"), jahr: Number(wert("h-jahr")) || 2026, person: fuer || undefined, pflicht: $("#h-pflicht").checked, art: "text" });
+    protokoll(`Dokument hochgeladen: ${wert("h-titel")}`); speichern(); schliessen(); zeigen();
+    return toast("Hochgeladen. Die Eigentümer werden per E-Mail benachrichtigt.");
+  }
+});
+
+zeigen();
+</script>
